@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Robot from "../assets/robot.gif";
+import Logout from "./Logout";
 export default function Welcome() {
   const [userName, setUserName] = useState("");
   useEffect(() => {
@@ -11,6 +12,16 @@ export default function Welcome() {
   }, [setUserName]);
   return (
     <Container>
+         <div className="chat-header">
+        <div className="user-details">
+          <div className="avatar">
+        
+          </div>
+          <div className="username">
+          </div>
+        </div>
+        <Logout />
+      </div>
       <img src={Robot} alt="" />
       <h1>
         Welcome, <span>{userName}!</span>
@@ -31,5 +42,27 @@ const Container = styled.div`
   }
   span {
     color: #4e0eff;
+  }
+
+  .chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2rem;
+    .user-details {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      .avatar {
+        img {
+          height: 3rem;
+        }
+      }
+      .username {
+        h3 {
+          color: white;
+        }
+      }
+    }
   }
 `;
