@@ -16,10 +16,10 @@ mongoose
     useUnifiedTopology: true,
   })
   .then(() => {
-    console.log("DB Connection Successfull");
+    console.info("DB Connection Successfull");
   })
   .catch((err) => {
-    console.log("not connected ",err);
+    console.err("not connected ",err);
   });
 
 app.use("/api/auth", authRoutes);
@@ -44,7 +44,7 @@ io.on("connection", (socket) => {
 
   socket.on("send-msg", (data) => {
     const sendUserSocket = onlineUsers.get(data.to);
-    if (sendUserSocket) {
+        if (sendUserSocket) {
       socket.to(sendUserSocket).emit("msg-recieve", data.msg);
     }
   });

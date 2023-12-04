@@ -12,6 +12,7 @@ module.exports.getMessages = async (req, res, next) => {
 
     const projectedMessages = messages.map((msg) => {
       return {
+        id: msg._id,
         fromSelf: msg.sender.toString() === from,
         message: msg.message.text,
       };
@@ -35,5 +36,28 @@ module.exports.addMessage = async (req, res, next) => {
     else return res.json({ msg: "Failed to add message to the database" });
   } catch (ex) {
     next(ex);
+  }
+};
+
+module.exports.deleteMessage = async (req, res) => {
+  try {
+    await Messages.findByIdAndRemove({_id: req.body.msgId});
+    res.json({ success: true, message: 'Message deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+
+module.exports.updateMessage = async (req, res) => {
+  try {
+    const updatedMessage = await Messages.findByIdAndUpdate(
+      {_id: req.body.id},
+      { $set: { "message.text": req.body.text } },
+      { new: true }
+    );
+    res.json({ success: true, message: 'Message updated successfully', data: updatedMessage });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 };

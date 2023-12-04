@@ -4,21 +4,28 @@ import ChatInput from "./ChatInput";
 import Logout from "./Logout";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
-import { sendMessageRoute, recieveMessageRoute } from "../utils/APIRoutes";
+import { sendMessageRoute, recieveMessageRoute, deleteMsgRoute, updateMsgRoute } from "../utils/APIRoutes";
 
 export default function ChatContainer({ currentChat, socket }) {
   const [messages, setMessages] = useState([]);
+  const [msgStatus, setMsgStatus] = useState("send");
+  const [currentMsg, setCurrentMsg] = useState("");
   const scrollRef = useRef();
+  const inputRef = useRef();
   const [arrivalMessage, setArrivalMessage] = useState(null);
 
-  useEffect(async () => {
-    const data = await JSON.parse(
-      localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
-    );
-    const response = await axios.post(recieveMessageRoute, {
+  const getChat = async(data) =>{
+    return await axios.post(recieveMessageRoute, {
       from: data._id,
       to: currentChat._id,
     });
+  }
+
+  useEffect(async () => {
+    const data = JSON.parse(
+      localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
+    );
+    const response = await getChat(data);
     setMessages(response.data);
   }, [currentChat]);
 
@@ -48,10 +55,34 @@ export default function ChatContainer({ currentChat, socket }) {
       message: msg,
     });
 
-    const msgs = [...messages];
-    msgs.push({ fromSelf: true, message: msg });
-    setMessages(msgs);
+    const msgs = await getChat(data);
+    setMessages(msgs.data);
   };
+
+
+  const handleDeleteMsg = async (msgId) => {
+    await axios.delete(deleteMsgRoute, {
+      data: {msgId}
+    });
+    const msgs = [...messages];
+    const updatedMsg = msgs.filter(msg=>msg.id !== msgId);
+    setMessages(updatedMsg);
+  };
+
+  const handleUpdateMsg = async (message) => {
+    await axios.put(updateMsgRoute, {id: currentMsg.id, text: message});
+    const msgs = [...messages];
+    const updatedmsg = msgs.map(msg => msg.id === currentMsg.id ? {id: currentMsg.id, fromSelf: currentMsg.fromSelf, message} : msg);
+    setMessages(updatedmsg);
+    setMsgStatus("send");
+  };
+
+  const focusInput = (message) => {
+    setCurrentMsg(message);
+    inputRef.current.value = message.message;
+    setMsgStatus("update");
+    inputRef.current.focus();
+  }
 
   useEffect(() => {
     if (socket.current) {
@@ -91,18 +122,22 @@ export default function ChatContainer({ currentChat, socket }) {
             <div ref={scrollRef} key={uuidv4()}>
               <div
                 className={`message ${
-                  message.fromSelf ? "sended" : "recieved"
+                  message.fromSelf ? "sended" : "received"
                 }`}
               >
-                <div className="content ">
-                  <p>{message.message}</p>
+                <div className="content dropdown">
+                    <p>{message.message}</p>
+                    <div className={`content dropdown-content ${message.fromSelf ? "" : "hidden"}`}>
+                       <p onClick={e=>focusInput(message)}>Edit</p>
+                       <p onClick={e=>handleDeleteMsg(message.id)}>Delete</p>
+                    </div>
                 </div>
               </div>
             </div>
           );
         })}
       </div>
-      <ChatInput handleSendMsg={handleSendMsg} />
+      <ChatInput handleSendMsg={handleSendMsg} msgStatus={msgStatus} handleUpdateMsg={handleUpdateMsg} inputRef={inputRef}/>
     </Container>
   );
 }
@@ -115,6 +150,34 @@ const Container = styled.div`
   @media screen and (min-width: 720px) and (max-width: 1080px) {
     grid-template-rows: 15% 70% 15%;
   }
+  .content.dropdown-content{
+    background-color: #0A0A13;
+    padding: 15px;
+    right: -16px;
+  }
+  .dropdown {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .hidden{
+    display: none!important;
+  }
+  
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    padding: 12px 16px;
+    z-index: 1;
+  }
+  .dropdown:hover .dropdown-content {
+    display: block;
+  }
+  .dropdown-content p:hover {background-color: #0A0A13}
+
   .chat-header {
     display: flex;
     justify-content: space-between;
