@@ -17,6 +17,7 @@ export default function Login() {
     draggable: true,
     theme: "dark",
   };
+  // if user already exists it will redirect to the login page 
   useEffect(() => {
     if (localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)) {
       navigate("/");
